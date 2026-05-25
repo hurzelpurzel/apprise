@@ -1,0 +1,11 @@
+{{- if .Values.nginxConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "apprise.fullname" . }}-nginx-config
+  labels:
+    {{- include "apprise.labels" . | nindent 4 }}
+data:
+  location-override.conf: |
+    {{- .Values.nginxConfig.locationOverride | nindent 4 }}
+{{- end }}

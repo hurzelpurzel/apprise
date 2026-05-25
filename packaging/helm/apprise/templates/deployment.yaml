@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "apprise.fullname" . }}
+  labels:
+    {{- include "apprise.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "apprise.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "apprise.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "apprise.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: APPRISE_STATEFUL_MODE
+              value: {{ .Values.apprise.config.statefulMode | quote }}
+            - name: APPRISE_WORKER_COUNT
+              value: {{ .Values.apprise.config.workerCount | quote }}
+            - name: APPRISE_ADMIN
+              value: {{ .Values.apprise.config.admin | ternary "y" "n" | quote }}
+            {{- if .Values.apprise.config.baseUrl }}
+            - name: APPRISE_BASE_URL
+              value: {{ .Values.apprise.config.baseUrl | quote }}
+            {{- end }}
+            {{- with .Values.apprise.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.apprise.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.healthcheck.enabled }}
+          livenessProbe:
+            {{- toYaml .Values.healthcheck.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.healthcheck.readinessProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.persistence.config.enabled }}
+            - name: config
+              mountPath: /config
+            {{- end }}
+            {{- if .Values.persistence.attach.enabled }}
+            - name: attach
+              mountPath: /attach
+            {{- end }}
+            {{- if .Values.persistence.plugin.enabled }}
+            - name: plugin
+              mountPath: /plugin
+            {{- end }}
+            - name: tmp
+              mountPath: /tmp
+            - name: appdir
+              mountPath: /opt/apprise/webapp
+            {{- if and .Values.basicAuth.enabled (or .Values.basicAuth.password .Values.basicAuth.existingSecret) }}
+            - name: basic-auth
+              mountPath: /etc/nginx/.htpasswd
+              subPath: auth
+              readOnly: true
+            {{- end }}
+            {{- if .Values.nginxConfig.enabled }}
+            - name: nginx-config
+              mountPath: /etc/nginx/location-override.conf
+              subPath: location-override.conf
+              readOnly: true
+            {{- end }}
+      volumes:
+        {{- if .Values.persistence.config.enabled }}
+        - name: config
+          {{- if .Values.persistence.config.existingClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.config.existingClaim }}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ include "apprise.fullname" . }}-config
+          {{- end }}
+        {{- end }}
+        {{- if .Values.persistence.attach.enabled }}
+        - name: attach
+          {{- if .Values.persistence.attach.existingClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.attach.existingClaim }}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ include "apprise.fullname" . }}-attach
+          {{- end }}
+        {{- end }}
+        {{- if .Values.persistence.plugin.enabled }}
+        - name: plugin
+          {{- if .Values.persistence.plugin.existingClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.plugin.existingClaim }}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: {{ include "apprise.fullname" . }}-plugin
+          {{- end }}
+        {{- end }}
+        - name: tmp
+          emptyDir:
+            medium: Memory
+        - name: appdir
+          emptyDir:
+            medium: Memory
+        {{- if and .Values.basicAuth.enabled (or .Values.basicAuth.password .Values.basicAuth.existingSecret) }}
+        - name: basic-auth
+          secret:
+            {{- if .Values.basicAuth.existingSecret }}
+            secretName: {{ .Values.basicAuth.existingSecret }}
+            {{- else }}
+            secretName: {{ include "apprise.fullname" . }}-basic-auth
+            {{- end }}
+        {{- end }}
+        {{- if .Values.nginxConfig.enabled }}
+        - name: nginx-config
+          configMap:
+            name: {{ include "apprise.fullname" . }}-nginx-config
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,22 @@
+apiVersion: v2
+name: apprise
+description: A Helm chart for Apprise API - Push Notifications That Work with Everything
+type: application
+version: 0.1.0
+appVersion: "1.1"
+home: https://github.com/caronc/apprise
+sources:
+  - https://github.com/caronc/apprise
+  - https://github.com/caronc/apprise-api
+maintainers:
+  - name: caronc
+    email: lead2gold@gmail.com
+    url: https://github.com/caronc
+keywords:
+  - notifications
+  - apprise
+  - messaging
+  - alerts
+  - webhooks
+annotations:
+  category: Infrastructure

@@ -1,0 +1,859 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "title": "Apprise Helm Chart Values Schema",
+  "description": "Schema for validating Apprise Helm chart values",
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of replicas for the deployment"
+    },
+    "image": {
+      "type": "object",
+      "description": "Container image configuration",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Container image repository"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "Never", "IfNotPresent"],
+          "description": "Image pull policy"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag (overrides the chart appVersion)"
+        }
+      },
+      "required": ["repository", "pullPolicy"],
+      "additionalProperties": false
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "description": "List of image pull secrets",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false
+      }
+    },
+    "nameOverride": {
+      "type": "string",
+      "description": "Override the name of the chart"
+    },
+    "fullnameOverride": {
+      "type": "string",
+      "description": "Override the fullname of the chart"
+    },
+    "serviceAccount": {
+      "type": "object",
+      "description": "Service account configuration",
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "description": "Specifies whether a service account should be created"
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Annotations to add to the service account",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the service account to use"
+        }
+      },
+      "required": ["create"],
+      "additionalProperties": false
+    },
+    "podAnnotations": {
+      "type": "object",
+      "description": "Annotations to add to pods",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "podSecurityContext": {
+      "type": "object",
+      "description": "Security context for the pod",
+      "properties": {
+        "runAsNonRoot": {
+          "type": "boolean"
+        },
+        "runAsUser": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "runAsGroup": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fsGroup": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "readOnlyRootFilesystem": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "securityContext": {
+      "type": "object",
+      "description": "Security context for the container",
+      "properties": {
+        "allowPrivilegeEscalation": {
+          "type": "boolean"
+        },
+        "capabilities": {
+          "type": "object",
+          "properties": {
+            "drop": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "add": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "readOnlyRootFilesystem": {
+          "type": "boolean"
+        },
+        "runAsNonRoot": {
+          "type": "boolean"
+        },
+        "runAsUser": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "apprise": {
+      "type": "object",
+      "description": "Apprise specific configuration",
+      "properties": {
+        "config": {
+          "type": "object",
+          "description": "Apprise configuration settings",
+          "properties": {
+            "statefulMode": {
+              "type": "string",
+              "enum": ["simple", "disabled"],
+              "description": "Enable stateful mode for persistent configurations"
+            },
+            "workerCount": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of worker processes"
+            },
+            "admin": {
+              "type": "boolean",
+              "description": "Enable admin interface"
+            },
+            "baseUrl": {
+              "type": "string",
+              "format": "uri",
+              "description": "Base URL for reverse proxy scenarios"
+            }
+          },
+          "additionalProperties": false
+        },
+        "env": {
+          "type": "array",
+          "description": "Environment variables",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "valueFrom": {
+                "type": "object"
+              }
+            },
+            "required": ["name"],
+            "oneOf": [
+              {"required": ["value"]},
+              {"required": ["valueFrom"]}
+            ],
+            "additionalProperties": false
+          }
+        },
+        "envFrom": {
+          "type": "array",
+          "description": "Additional environment variables from secrets or configmaps",
+          "items": {
+            "type": "object",
+            "properties": {
+              "secretRef": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "optional": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["name"]
+              },
+              "configMapRef": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "optional": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["name"]
+              }
+            },
+            "oneOf": [
+              {"required": ["secretRef"]},
+              {"required": ["configMapRef"]}
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "service": {
+      "type": "object",
+      "description": "Service configuration",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"],
+          "description": "Service type"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Service port"
+        },
+        "targetPort": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Target port on the container"
+        }
+      },
+      "required": ["type", "port"],
+      "additionalProperties": false
+    },
+    "ingress": {
+      "type": "object",
+      "description": "Ingress configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable ingress"
+        },
+        "className": {
+          "type": "string",
+          "description": "Ingress class name"
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Ingress annotations",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "hosts": {
+          "type": "array",
+          "description": "Ingress hosts",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": "string",
+                "description": "Host name"
+              },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "pathType": {
+                      "type": "string",
+                      "enum": ["Exact", "Prefix", "ImplementationSpecific"]
+                    }
+                  },
+                  "required": ["path", "pathType"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["host", "paths"],
+            "additionalProperties": false
+          }
+        },
+        "tls": {
+          "type": "array",
+          "description": "TLS configuration",
+          "items": {
+            "type": "object",
+            "properties": {
+              "secretName": {
+                "type": "string"
+              },
+              "hosts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["secretName", "hosts"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["enabled"],
+      "additionalProperties": false
+    },
+    "persistence": {
+      "type": "object",
+      "description": "Persistent storage configuration",
+      "properties": {
+        "config": {
+          "$ref": "#/$defs/persistenceVolume",
+          "description": "Configuration persistence volume"
+        },
+        "attach": {
+          "$ref": "#/$defs/persistenceVolume",
+          "description": "Attachment persistence volume"
+        },
+        "plugin": {
+          "$ref": "#/$defs/persistenceVolume",
+          "description": "Plugin persistence volume"
+        }
+      },
+      "additionalProperties": false
+    },
+    "resources": {
+      "type": "object",
+      "description": "Resource configuration",
+      "properties": {
+        "limits": {
+          "$ref": "#/$defs/resourceQuantity"
+        },
+        "requests": {
+          "$ref": "#/$defs/resourceQuantity"
+        }
+      },
+      "additionalProperties": false
+    },
+    "healthcheck": {
+      "type": "object",
+      "description": "Health check configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable health checks"
+        },
+        "livenessProbe": {
+          "$ref": "#/$defs/probe",
+          "description": "Liveness probe configuration"
+        },
+        "readinessProbe": {
+          "$ref": "#/$defs/probe",
+          "description": "Readiness probe configuration"
+        }
+      },
+      "required": ["enabled"],
+      "additionalProperties": false
+    },
+    "autoscaling": {
+      "type": "object",
+      "description": "Horizontal Pod Autoscaler configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable horizontal pod autoscaling"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum number of replicas"
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum number of replicas"
+        },
+        "targetCPUUtilizationPercentage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Target CPU utilization percentage"
+        },
+        "targetMemoryUtilizationPercentage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Target memory utilization percentage"
+        }
+      },
+      "required": ["enabled"],
+      "if": {
+        "properties": {
+          "enabled": {"const": true}
+        }
+      },
+      "then": {
+        "required": ["minReplicas", "maxReplicas"]
+      },
+      "additionalProperties": false
+    },
+    "nodeSelector": {
+      "type": "object",
+      "description": "Node selector for pod assignment",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "tolerations": {
+      "type": "array",
+      "description": "Tolerations for pod assignment",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string",
+            "enum": ["Exists", "Equal"]
+          },
+          "value": {
+            "type": "string"
+          },
+          "effect": {
+            "type": "string",
+            "enum": ["NoSchedule", "PreferNoSchedule", "NoExecute"]
+          },
+          "tolerationSeconds": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "affinity": {
+      "type": "object",
+      "description": "Affinity rules for pod assignment"
+    },
+    "podDisruptionBudget": {
+      "type": "object",
+      "description": "Pod Disruption Budget configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Pod Disruption Budget"
+        },
+        "minAvailable": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9]+%$"
+            }
+          ],
+          "description": "Minimum available pods"
+        },
+        "maxUnavailable": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9]+%$"
+            }
+          ],
+          "description": "Maximum unavailable pods"
+        }
+      },
+      "required": ["enabled"],
+      "if": {
+        "properties": {
+          "enabled": {"const": true}
+        }
+      },
+      "then": {
+        "oneOf": [
+          {"required": ["minAvailable"]},
+          {"required": ["maxUnavailable"]}
+        ]
+      },
+      "additionalProperties": false
+    },
+    "networkPolicy": {
+      "type": "object",
+      "description": "Network Policy configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Network Policy"
+        },
+        "policyTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Ingress", "Egress"]
+          },
+          "description": "Policy types"
+        },
+        "ingress": {
+          "type": "array",
+          "description": "Ingress rules",
+          "items": {
+            "type": "object"
+          }
+        },
+        "egress": {
+          "type": "array",
+          "description": "Egress rules",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": ["enabled"],
+      "additionalProperties": false
+    },
+    "monitoring": {
+      "type": "object",
+      "description": "Prometheus monitoring configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable monitoring"
+        },
+        "serviceMonitor": {
+          "type": "object",
+          "description": "ServiceMonitor configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable ServiceMonitor"
+            },
+            "additionalLabels": {
+              "type": "object",
+              "description": "Additional labels for ServiceMonitor",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "annotations": {
+              "type": "object",
+              "description": "Annotations for ServiceMonitor",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "interval": {
+              "type": "string",
+              "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+              "description": "Scrape interval"
+            },
+            "scrapeTimeout": {
+              "type": "string",
+              "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$",
+              "description": "Scrape timeout"
+            },
+            "path": {
+              "type": "string",
+              "description": "Metrics path"
+            }
+          },
+          "required": ["enabled"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["enabled"],
+      "additionalProperties": false
+    },
+    "basicAuth": {
+      "type": "object",
+      "description": "Basic authentication configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable basic authentication"
+        },
+        "username": {
+          "type": "string",
+          "description": "Basic auth username"
+        },
+        "password": {
+          "type": "string",
+          "description": "Basic auth password"
+        },
+        "existingSecret": {
+          "type": "string",
+          "description": "Name of existing secret containing auth data"
+        },
+        "secretKey": {
+          "type": "string",
+          "description": "Key in the secret containing auth data"
+        }
+      },
+      "required": ["enabled"],
+      "if": {
+        "properties": {
+          "enabled": {"const": true}
+        }
+      },
+      "then": {
+        "oneOf": [
+          {
+            "required": ["username", "password"]
+          },
+          {
+            "required": ["existingSecret", "secretKey"]
+          }
+        ]
+      },
+      "additionalProperties": false
+    },
+    "nginxConfig": {
+      "type": "object",
+      "description": "Custom nginx configuration override",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable custom nginx configuration"
+        },
+        "locationOverride": {
+          "type": "string",
+          "description": "Override configuration for location block"
+        }
+      },
+      "required": ["enabled"],
+      "if": {
+        "properties": {
+          "enabled": {"const": true}
+        }
+      },
+      "then": {
+        "required": ["locationOverride"]
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "replicaCount",
+    "image",
+    "serviceAccount",
+    "service"
+  ],
+  "$defs": {
+    "persistenceVolume": {
+      "type": "object",
+      "description": "Persistence volume configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable persistence for this volume"
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "Storage class name"
+        },
+        "accessMode": {
+          "type": "string",
+          "enum": ["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"],
+          "description": "Access mode for the volume"
+        },
+        "size": {
+          "type": "string",
+          "pattern": "^[0-9]+(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K|e|p|t|g|m|k)?$",
+          "description": "Size of the volume"
+        },
+        "existingClaim": {
+          "type": "string",
+          "description": "Name of existing persistent volume claim"
+        }
+      },
+      "required": ["enabled"],
+      "if": {
+        "properties": {
+          "enabled": {"const": true}
+        }
+      },
+      "then": {
+        "oneOf": [
+          {
+            "required": ["accessMode", "size"]
+          },
+          {
+            "required": ["existingClaim"]
+          }
+        ]
+      },
+      "additionalProperties": false
+    },
+    "resourceQuantity": {
+      "type": "object",
+      "description": "Resource quantity specification",
+      "properties": {
+        "cpu": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]+(m|[0-9]*\\.?[0-9]*)?$"
+            },
+            {
+              "type": "number",
+              "minimum": 0
+            }
+          ],
+          "description": "CPU resource quantity"
+        },
+        "memory": {
+          "type": "string",
+          "pattern": "^[0-9]+(Ei|Pi|Ti|Gi|Mi|Ki|E|P|T|G|M|K|e|p|t|g|m|k)?$",
+          "description": "Memory resource quantity"
+        }
+      },
+      "additionalProperties": false
+    },
+    "probe": {
+      "type": "object",
+      "description": "Kubernetes probe configuration",
+      "properties": {
+        "httpGet": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "port": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65535
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "scheme": {
+              "type": "string",
+              "enum": ["HTTP", "HTTPS"]
+            }
+          },
+          "required": ["path", "port"],
+          "additionalProperties": false
+        },
+        "exec": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["command"],
+          "additionalProperties": false
+        },
+        "tcpSocket": {
+          "type": "object",
+          "properties": {
+            "port": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65535
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": ["port"],
+          "additionalProperties": false
+        },
+        "initialDelaySeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Initial delay before probing"
+        },
+        "periodSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How often to perform the probe"
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Timeout for the probe"
+        },
+        "successThreshold": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum consecutive successes"
+        },
+        "failureThreshold": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum consecutive failures"
+        }
+      },
+      "oneOf": [
+        {"required": ["httpGet"]},
+        {"required": ["exec"]},
+        {"required": ["tcpSocket"]}
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
